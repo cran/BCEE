@@ -8,10 +8,10 @@ N-BCEE implementation of the BCEE algorithm.
 }
 \usage{
 NBCEE(X, Y, U, omega, niter = 5000, nburn = 500, nthin = 10,
- maxmodelX = NA, maxmodelY = NA)
+ maxmodelX = NA, maxmodelY = NA, family.X = "gaussian")
 }
 \arguments{
-  \item{X}{A vector of observed values for the continuous exposure.
+  \item{X}{A vector of observed values for the exposure. 
 }
   \item{Y}{A vector of observed values for the continuous outcome.
 }
@@ -33,8 +33,10 @@ The maximum number of exposure models the algorithm can explore. See \code{maxmo
   \item{maxmodelY}{
 The maximum number of distinct outcome models that the algorithm can explore. Choosing a smaller value can shorten computing time. However, choosing a value that is too small will cause the algorithm to crash. The default is \code{NA}; the maximum number of outcome models that can be explored is then set to the minimum of \code{niter + nburn} and \code{2^M}.  
 }
-  
 
+  \item{family.X}{
+A description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link{family}} for details of family functions.) The default is \code{"gaussian"}
+}
 }
 \details{
 \code{NBCEE} assumes there are no missing values in the objects \code{X}, \code{Y} and \code{U}. The \code{na.omit} function which removes cases with missing data or an imputation package might be helpful.
@@ -48,7 +50,7 @@ The maximum number of distinct outcome models that the algorithm can explore. Ch
 \references{
 Madigan, D., York, J., Allard, D. (1995) \emph{Bayesian graphical models for discrete data}, International Statistical Review, 63, 215-232.
 
-Talbot, D., Lefebvre, G., Atherton, J. (2015) \emph{The Bayesian causal effect estimation algorithm}, Journal of Causal Inference (in press).
+Talbot, D., Lefebvre, G., Atherton, J. (2015) \emph{The Bayesian causal effect estimation algorithm}, Journal of Causal Inference, 3(2), 207-236.
 }
 \author{
 Denis Talbot, Genevieve Lefebvre, Juli Atherton.

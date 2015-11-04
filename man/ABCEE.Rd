@@ -8,10 +8,10 @@ A-BCEE implementation of the BCEE algorithm.
 }
 \usage{
 ABCEE(X, Y, U, omega, forX = NA, niter = 5000, nburn = 500, nthin = 10,
- maxmodelY = NA, OR = 20)
+ maxmodelY = NA, OR = 20, family.X = "gaussian")
 }
 \arguments{
-  \item{X}{A vector of observed values for the continuous exposure.
+  \item{X}{A vector of observed values for the exposure.
 }
   \item{Y}{A vector of observed values for the continuous outcome.
 }
@@ -36,6 +36,10 @@ The maximum number of distinct outcome models that the algorithm can explore. Ch
   \item{OR}{
 A number specifying the maximum ratio for excluding models in Occam's window for the exposure modeling step (see the \code{bic.glm} help file, and Madigan & Raftery, 1994).  The default is 20.  
 }
+
+  \item{family.X}{
+A description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link{family}} for details of family functions.) The default is \code{"gaussian"}
+}
 }
 
 \details{
@@ -55,7 +59,7 @@ Madigan, D., York, J., Allard, D. (1995) \emph{Bayesian graphical models for dis
 
 Madigan, D., Raftery, A. E. (1994) \emph{Model selection and accounting for model uncertainty in graphical models using Occam's window}, Journal of the American Statistical Association, 89 (428), 1535-1546.
 
-Talbot, D., Lefebvre, G., Atherton, J. (2015) \emph{The Bayesian causal effect estimation algorithm}, Journal of Causal Inference (in press).
+Talbot, D., Lefebvre, G., Atherton, J. (2015) \emph{The Bayesian causal effect estimation algorithm}, Journal of Causal Inference, 3(2), 207-236.
 }
 \author{
 Denis Talbot, Genevieve Lefebvre, Juli Atherton.

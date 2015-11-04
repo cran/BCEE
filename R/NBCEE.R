@@ -1,25 +1,26 @@
 NBCEE <-
-function(X, Y, U, omega, niter = 5000, nburn = 500, nthin = 10, maxmodelX = NA, maxmodelY = NA)
+function(X, Y, U, omega, niter = 5000, nburn = 500, nthin = 10, maxmodelX = NA, maxmodelY = NA,
+family.X = "gaussian")
 {
 n = length(Y); #Sample size
 n_cov = ncol(as.matrix(U)); #Number of covariate, potential confounders
 if(is.na(maxmodelX)) maxmodelX = min(niter + nburn, 2**n_cov);
 if(is.na(maxmodelY)) maxmodelY = min(niter + nburn, 2**n_cov);
-alpha_X = as.numeric(bic.glm(y = X, x = U, glm.family = "gaussian", OR = 1.0000001)$which[1,]); #Inital exposure model
+alpha_X = as.numeric(bic.glm(y = X, x = U, glm.family = family.X, OR = 1.0000001)$which[1,]); #Inital exposure model
 alpha_Y = as.numeric(bic.glm(y = Y, x = cbind(X, U), glm.family = "gaussian", OR = 1.0000001, 
 prior.param = c(1, rep(0.5, n_cov)))$which[1, 2:(n_cov+1)]); #Initial outcome model
 if(sum(alpha_X) == 0) 
 {
-model_X = lm(X ~ 1);
+model_X = glm(X ~ 1, family = family.X);
 }
 else
 {
-model_X = lm(X ~ U[,alpha_X == 1]);
+model_X = glm(X ~ U[,alpha_X == 1], family = family.X);
 }
 models_X = matrix(0, nrow = ceiling(niter/nthin), ncol = n_cov); #objects that will contain results
 tested_models_X = matrix(-1, nrow = maxmodelX, ncol = 1); #objects that will contain information for models already tested
 pX_tested = matrix(NA, nrow = maxmodelX, ncol = 1); #objects that will contain information for models already tested
-bic_x = BIC(model_X);
+bic_x = BIC(model_X); #need to make sure that BIC for the same model in ml and glm is the same!!
 if(sum(alpha_Y) == 0)
 {
 model_Y0 = lm(Y ~ X);
@@ -80,11 +81,11 @@ else #The candidate model was never tested
 {
 if(sum(alpha_X_1) == 0) 
 {
-bic_x_1 = BIC(lm(X ~ 1));
+bic_x_1 = BIC(glm(X ~ 1, family = family.X));
 }
 else
 {
-model_X = lm(X ~ U[,alpha_X_1 == 1]);
+model_X = glm(X ~ U[,alpha_X_1 == 1], family = family.X);
 bic_x_1 = BIC(model_X);
 }
 tested_models_X[k_X] = char_alpha_X_1; #Recording info about candidate model

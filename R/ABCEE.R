@@ -1,5 +1,5 @@
 ABCEE <-
-function(X, Y, U, omega, forX = NA, niter = 5000, nburn = 500, nthin = 10, maxmodelY = NA, OR = 20)
+function(X, Y, U, omega, forX = NA, niter = 5000, nburn = 500, nthin = 10, maxmodelY = NA, OR = 20, family.X = "gaussian")
 {
 n = length(Y); #Sample size
 n_cov = ncol(as.matrix(U)); #Number of covariate, potential confounders
@@ -7,7 +7,7 @@ priorX = rep(0, n_cov);
 if(is.na(forX[1])) forX = 1:n_cov;
 priorX[forX] = 0.5;
 if(is.na(maxmodelY)) maxmodelY = min(niter + nburn, 2**n_cov);
-model.X = bic.glm(y = X, x = U, glm.family = "gaussian", OR = OR, prior.param = priorX);
+model.X = bic.glm(y = X, x = U, glm.family = family.X, OR = OR, prior.param = priorX);
 models.X = cbind(model.X$which, model.X$postprob);
 alpha_X = model.X$probne0/100;
 alpha_Y = as.numeric(bic.glm(y = Y, x = cbind(X, U), glm.family = "gaussian", OR = 1.0000001, 

@@ -1,2 +1,4 @@
 exportPattern("^[[:alpha:]]+")
 importFrom(BMA, bic.glm)
+importFrom("stats", "BIC", "coef", "lm", "glm", "rnorm", "sd", "update",
+     "vcov")

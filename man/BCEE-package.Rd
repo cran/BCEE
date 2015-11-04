@@ -11,8 +11,8 @@ Contains two functions that correspond to the approximate BCEE (A-BCEE) and the 
 \tabular{ll}{
 Package: \tab BCEE\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2015-06-24\cr
+Version: \tab 1.1\cr
+Date: \tab 2015-11-03\cr
 License: \tab GPL (>=2) \cr
 }
 ABCEE(X, Y, U, omega), \cr
@@ -24,7 +24,7 @@ Denis Talbot, Genevieve Lefebvre, Juli Atherton.
 Maintainer: Denis Talbot \email{denis.talbot@fmed.ulaval.ca}
 }
 \references{
-Talbot, D., Lefebvre, G., Atherton, J. (2015) \emph{The Bayesian causal effect estimation algorithm}, Journal of Causal Inference (in press).
+Talbot, D., Lefebvre, G., Atherton, J. (2015) \emph{The Bayesian causal effect estimation algorithm}, Journal of Causal Inference, 3(2), 207-236.
 }
 \keyword{causal}
 \keyword{confounding}
