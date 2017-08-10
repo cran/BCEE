@@ -11,15 +11,15 @@ Contains two functions that correspond to the approximate BCEE (A-BCEE) and the 
 \tabular{ll}{
 Package: \tab BCEE\cr
 Type: \tab Package\cr
-Version: \tab 1.1\cr
-Date: \tab 2015-11-03\cr
+Version: \tab 1.2\cr
+Date: \tab 2017-08-10\cr
 License: \tab GPL (>=2) \cr
 }
 ABCEE(X, Y, U, omega), \cr
 NBCEE(X, Y, U, omega).
 }
 \author{
-Denis Talbot, Genevieve Lefebvre, Juli Atherton.
+Denis Talbot, Genevieve Lefebvre, Juli Atherton, Yohann Chiu.
 
 Maintainer: Denis Talbot \email{denis.talbot@fmed.ulaval.ca}
 }

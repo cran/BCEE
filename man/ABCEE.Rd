@@ -22,19 +22,19 @@ ABCEE(X, Y, U, omega, forX = NA, niter = 5000, nburn = 500, nthin = 10,
   \item{forX}{
 A Boolean vector of size \code{M}, where the \code{m}th element indicates whether or not the \code{m}th potential confounding covariate should be considered in the exposure modeling step of the BCEE algorithm. The default for \code{forX} is \code{NA}, which indicates that all potential confounding covariates should be considered in the exposure modeling step. 
 }
-  \item{niter}{The number of post burn-in iterations in the Markov chain Monte Carlo model composition (MC^3) algorithm (Madigan et al. 1995), prior to applying thinning. The default is 5000.
+  \item{niter}{The number of post burn-in iterations in the Markov chain Monte Carlo model composition (MC^3) algorithm (Madigan et al. 1995), prior to applying thinning. The default is 5000, but users should ensure that the value is large enough so that the number of retained samples can provide good inferences. 
 }
   \item{nburn}{
-The number of burn-in iterations (prior to applying thinning). The default is 500.
+The number of burn-in iterations (prior to applying thinning). The default is 500, but users should ensure that the value is large enough so that convergence of the chain is reached. An example of diagnostics of convergence of the chain is provided below.
 }
   \item{nthin}{
-The thinning of the chain. The default is 10. 
+The thinning of the chain. The default is 10, but users should ensure that the value is large enough so that there is no auto-correlation between sampled values. An example of diagnostics of absence of auto-correlation is provided below.
 }
   \item{maxmodelY}{
-The maximum number of distinct outcome models that the algorithm can explore. Choosing a smaller value can shorten computing time. However, choosing a value that is too small will cause the algorithm to crash. The default is \code{NA}; the maximum number of outcome models that can be explored is then set to the minimum of \code{niter + nburn} and \code{2^M}.  
+The maximum number of distinct outcome models that the algorithm can explore. Choosing a smaller value can shorten computing time. However, choosing a value that is too small will cause the algorithm to crash and return an error message. The default is \code{NA}; the maximum number of outcome models that can be explored is then set to the minimum of \code{niter + nburn} and \code{2^M}.  
 }
   \item{OR}{
-A number specifying the maximum ratio for excluding models in Occam's window for the exposure modeling step (see the \code{bic.glm} help file, and Madigan & Raftery, 1994).  The default is 20.  
+A number specifying the maximum ratio for excluding models in Occam's window for the exposure modeling step (see the \code{bic.glm} help file, and Madigan & Raftery, 1994). The default is 20.  
 }
 
   \item{family.X}{
@@ -43,7 +43,7 @@ A description of the error distribution and link function to be used in the mode
 }
 
 \details{
-The \code{ABCEE} function first computes the exposure model's posterior distribution using the \code{bic.glm} function. The outcome model's posterior distribution is then computed using MC^3 (Madigan et al., 1995) as described in Talbot et al. (2015).
+The \code{ABCEE} function first computes the exposure model's posterior distribution using the \code{bic.glm} function if the number of covariates is smaller than 50. Otherwise, the exact procedures depends on the value of \code{family.X}. The outcome model's posterior distribution is then computed using MC^3 (Madigan et al., 1995) as described in Talbot et al. (2015).
 
 \code{ABCEE} assumes there are no missing values in the objects \code{X}, \code{Y} and \code{U}. The \code{na.omit} function which removes cases with missing data or an imputation package might be helpful.
 }
@@ -62,46 +62,61 @@ Madigan, D., Raftery, A. E. (1994) \emph{Model selection and accounting for mode
 Talbot, D., Lefebvre, G., Atherton, J. (2015) \emph{The Bayesian causal effect estimation algorithm}, Journal of Causal Inference, 3(2), 207-236.
 }
 \author{
-Denis Talbot, Genevieve Lefebvre, Juli Atherton.
+Denis Talbot, Yohann Chiu, Genevieve Lefebvre, Juli Atherton.
 }
 
 \seealso{
 \code{\link[BMA]{bic.glm}}, \code{\link{na.omit}}, \code{\link{NBCEE}}.
 }
 \examples{
-# In this example, U1 and U2 are potential confounding covariates
-# generated as independent N(0,1).
-# X is generated as a function of both U1 and U2 with a N(0,1) error.
-# Y is generated as a function of X and U1 with a N(0,1) error.
-# Variable U1 is the only confounder.
-# The causal effect of X on Y equals 1. 
-# The exposure effect estimator (beta hat) in the outcome model  
-# including U1 and U2 or including U1 only is unbiased.
-# The sample size is n = 200.
 
-# Generating the data
+#Example:
+#In this example, both U1 and U2 are potential confounding covariates.
+#Both are generated as independent N(0,1).
+#X is generated as a function of both U1 and U2 with a N(0,1) error.
+#Y is generated as a function of X and U1 with a N(0,1) error.
+#Thus, only U1 is a confounder.
+#The causal effect of X on Y equals 1. 
+#The parameter beta associated to exposure in the outcome model
+#that includes U1 and the one from the full outcome model is an
+#unbiased estimator of the effect of X on Y.
+
+#Generating the data
 set.seed(418949); 
 U1 = rnorm(200); 
 U2 = rnorm(200);
 X = 0.5*U1 + 1*U2 + rnorm(200);
 Y = 1*X + 0.5*U1 + rnorm(200);
 
-# Using ABCEE to estimate the causal exposure effect
-n = 200;
-omega.c = 500;
-results = ABCEE(X,Y,cbind(U1,U2), omega = omega.c*sqrt(n),
- niter = 1000, nthin = 5, nburn = 20);
+#Using ABCEE to estimate the causal exposure effect
+results = ABCEE(X,Y,cbind(U1,U2), omega = 500*sqrt(200), niter = 10000, nthin = 5, nburn = 500);
 
-# The posterior mean of the exposure effect:
+##Diagnostics of convergence of the chain:
+plot(results$betas, type = "l");
+lines(smooth.spline(1:length(results$beta), results$beta), col = "blue", lwd = 2);
+#The plot shows no apparent trend.
+#The smoothing curve confirms that there is little or no trend,
+#suggesting the chain has indeed converged before burn-in iterations ended.
+#Otherwise, the value of nburn should be increased.
+
+##Diagnostics of absence of auto-correlation
+acf(results$betas, main = "ACF plot");
+#Most lines are within the confidence intervals' limits, which suggests
+#that there is no residual auto-correlation. If there were, the value
+#of nthin should be increased.
+
+##The number of sampled values is niter/nthin = 2000, which should be
+##large enough to provide good inferences for 95\% confidence intervals.
+
+#The posterior mean of the exposure effect:
 mean(results$betas);
-# The posterior standard deviation of the exposure effect:
+#The posterior standard deviation of the exposure effect:
 sd(results$betas);
-# The posterior distribution of the exposure model:
-results$models.X;
-# The posterior probability of inclusion of each covariate:
+#The posterior inclusion probability of each covariate:
 colMeans(results$models.Y);
-# The posterior distribution of the outcome model:
+#The posterior distribution of the outcome model:
 table(apply(results$models.Y, 1, paste0, collapse = ""));
+
 }
 \keyword{causal}
 \keyword{confounding}

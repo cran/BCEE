@@ -1,4 +1,6 @@
-exportPattern("^[[:alpha:]]+")
+useDynLib(BCEE)
+importFrom(Rcpp, evalCpp)
 importFrom(BMA, bic.glm)
-importFrom("stats", "BIC", "coef", "lm", "glm", "rnorm", "sd", "update",
-     "vcov")
+importFrom(stats, glm, BIC, aggregate, sd, coef, rnorm, lm, update, vcov)
+importFrom(leaps, regsubsets)
+exportPattern("ABCEE", "NBCEE")

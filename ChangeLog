@@ -1,5 +1,4 @@
-Changes from Version 1.0 to 1.1 [2015/10/30] :
-
- * Added a new argument "family.X" in functions ABCEE and NBCEE to accomodate non-continuous exposures.
-   To ensure compatibility with the previous version, the default is family.X = "gaussian".
-   The documentation has been updated accordingly.
+2017/08/10:
+- The ABCEE function now uses Rcpp to improve computational efficiency.
+- The ABCEE function now accomodates cases with more than 30 covariates.
+- The documentation was enhanced. In particular, it now contains examples of diagnostics for the MCMC.
