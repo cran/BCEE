@@ -4,7 +4,7 @@
 Approximate BCEE Implementation
 }
 \description{
-A-BCEE implementation of the BCEE algorithm.
+A-BCEE implementation of the BCEE algorithm. This function supports exposures that can be modeled with generalized linear models (e.g., binary, continuous or Poisson), but only continuous outcomes. 
 }
 \usage{
 ABCEE(X, Y, U, omega, forX = NA, niter = 5000, nburn = 500, nthin = 10,
@@ -92,7 +92,7 @@ Y = 1*X + 0.5*U1 + rnorm(200);
 results = ABCEE(X,Y,cbind(U1,U2), omega = 500*sqrt(200), niter = 10000, nthin = 5, nburn = 500);
 
 ##Diagnostics of convergence of the chain:
-plot(results$betas, type = "l");
+plot.default(results$betas, type = "l");
 lines(smooth.spline(1:length(results$beta), results$beta), col = "blue", lwd = 2);
 #The plot shows no apparent trend.
 #The smoothing curve confirms that there is little or no trend,

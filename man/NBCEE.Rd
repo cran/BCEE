@@ -4,7 +4,7 @@
 Naive BCEE Implementation
 }
 \description{
-N-BCEE implementation of the BCEE algorithm.
+N-BCEE implementation of the BCEE algorithm. This function supports exposures that can be modeled with generalized linear models (e.g., binary, continuous or Poisson), but only continuous outcomes. 
 }
 \usage{
 NBCEE(X, Y, U, omega, niter = 5000, nburn = 500, nthin = 10,
