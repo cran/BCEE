@@ -1,6 +1,6 @@
 GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y = "gaussian", 
                    X1 = 1, X0 = 0, priorX = NA, priorY = NA, maxsize = NA, OR = 20, truncation = c(0.01, 0.99),
-                   var.comp = "asymptotic", B = 200)
+                   var.comp = "asymptotic", B = 200, nsampX = 30)
 {
  # Error checks
  if(!is.numeric(X)){stop("X should be a numeric variable")};
@@ -50,7 +50,16 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
   if(B < 2){stop("At least 2 bootstrap samples are required to compute a standard deviation (but much more is desirable)")};
   if(B%%1 !=0){B = B - B%%1; warning("B was not an integer; it has been rounded down.");};
  }
-
+ if(!is.numeric(nsampX)
+    & family.X == "gaussian" 
+    & family.Y == "binomial"){stop("nsampX must be numeric")};
+ if(nsampX < 1
+    & family.X == "gaussian" 
+    & family.Y == "binomial"){stop("nsampX should be at least 1")};
+ if(nsampX%%1 != 0
+    & family.X == "gaussian" 
+    & family.Y == "binomial"){nsampX = nsampX - nsampX%%1;
+                              warning("nsampX was not an integer; it has been rounded down.")};
  sy = sd(Y);
  if(family.Y == "binomial") sy = 1;
  su = apply(as.matrix(U), 2, sd);
@@ -70,6 +79,7 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
 
  resultsX = summary(regsubsets(y = X, x = as.matrix(U), nbest = 1, really.big = T, nvmax = maxsize, method = "forward")); #use linear regression for first screening of models
  alpha_X = resultsX$which[which.min(resultsX$bic), -1]; #Inital exposure model is the best fitting linear regression
+ alpha_X[priorX == 1] = 1;
 	
  ###Obtaining BIC for X
  if(sum(alpha_X) == 0) 
@@ -152,6 +162,7 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
 
  resultsY = summary(regsubsets(y = Y, x = cbind(X, U), nbest = 1, really.big = T, nvmax = maxsize, force.in = 1, method = "forward")); #use linear regression for first screening of models
  alpha_Y = resultsY$which[which.min(resultsY$bic), -c(1,2)];  #Inital outcome model is the best fitting linear regression
+ alpha_Y[priorY == 1] = 1;
 
  if(sum(alpha_Y) == 0)
  {
@@ -167,12 +178,12 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
 
  if(family.Y == "binomial")
  {
-  betas_t = matrix(NA, nrow = niter, ncol = 2); #exposure betas estimated with TMLE or AIPTW
-  vars_t = matrix(NA, nrow = niter, ncol = 2); #exposure beta variances with TMLE or AIPTW
+  betas_t = matrix(NA, nrow = niter, ncol = 2); #exposure betas estimated with TMLE
+  vars_t = matrix(NA, nrow = niter, ncol = 2); #exposure beta variances with TMLE
  } else #family.Y == "gaussian"
  {
-  betas_t = matrix(NA, nrow = niter, ncol = 1); #exposure betas estimated with TMLE or AIPTW
-  vars_t = matrix(NA, nrow = niter, ncol = 1); #exposure beta variances with TMLE or AIPTW
+  betas_t = matrix(NA, nrow = niter, ncol = 1); #exposure betas estimated with TMLE
+  vars_t = matrix(NA, nrow = niter, ncol = 1); #exposure beta variances with TMLE
  }
  models_Y = matrix(NA, nrow = niter, ncol = n_cov); #Models in numeric form
  tested_models_Y = matrix(-1, nrow = niter, ncol = 1); #Models in alphanumeric form
@@ -189,7 +200,6 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
   Q0 = predict(model_Y0); # Y hat
   r0 = Q0 - B0*X; 
   predX0 = predict(model_X0); # X hat
-  #Perform truncation ...
   Hg = X - predX0; # Clever covariate
   epsilon = coef(lm(Y~-1+Hg, offset = Q0)); # Fluctuation of estimate
   B1 = betas_t[1] = B0 + epsilon; # Final TMLE estimate of slope
@@ -368,34 +378,48 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
   }
  } else if(family.Y == "binomial" & family.X == "gaussian")
  {
-  #truncation ...
-  #
-  predX0 = predict(model_X0);
-  sdX = sqrt(var(model_X0$residuals)*n/model_X0$df.residual);
-  delta0 = X0 - X;
-  delta1 = X1 - X;
-  H0 = dnorm(X-delta0, mean = predX0, sd = sdX);
-  H1 = dnorm(X-delta1, mean = predX0, sd = sdX);
-  HX = dnorm(X, mean = predX0, sd = sdX);
+  ## Q-model estimation
+  modX = glm(X ~ 1, family = "gaussian");
+  Xs = as.matrix(rnorm(nsampX*n, mean = coef(modX, type = "res"), sd = sd(residuals(modX))));
+  Vs = matrix(rep(U[,alpha_Y == 1], each = nsampX), nrow = n*nsampX, ncol = sum(alpha_Y), byrow = FALSE);
+  Ys = plogis(cbind(1, Xs, Vs)%*%coef(model_Y0));
 
-  Q1 = plogis(cbind(1, X1, U[,alpha_Y == 1])%*%coef(model_Y0));
-  Q0 = plogis(cbind(1, X0, U[,alpha_Y == 1])%*%coef(model_Y0));
-  QX = plogis(cbind(1, X, U[,alpha_Y == 1])%*%coef(model_Y0));
+  ## Clever covariate
+  hX = dnorm(X, mean = coef(modX), sd = sd(residuals(modX)));
+  pX = dnorm(X, mean = predict(model_X0), sd = sd(residuals(model_X0)));
+  Yp  = predict(model_Y0, type = "res");
+  w = hX/pX;
+  w = w/mean(w);
+  w = pmin(w, quantile(w, truncation[2]));
+  w = pmax(w, quantile(w, truncation[1]));
 
-  # Risk difference
-  betas_t[1,1] = mean((H1-H0)/HX*(Y - QX) + Q1 - Q0);
+  ## Fluctuation
+  mod.f = glm(Y ~ offset(qlogis(Yp)) + X, family = binomial(link = "logit"), weights = w);
+  Yps = plogis(coef(mod.f)[1] + coef(mod.f)[2]*Xs + qlogis(Ys));
+  Yp2 = plogis(coef(mod.f)[1] + coef(mod.f)[2]*X + qlogis(Yp));
 
-  # Relative risk
-  D1 = H1/HX*(Y - QX) + Q1;
-  D0 = H0/HX*(Y - QX) + Q0;
-  Q1_1 = mean(D1);
-  Q0_1 = mean(D0);
-  betas_t[1,2] = Q1_1/Q0_1;
+
+  ## Final estimation
+  psi = suppressWarnings(coef(glm(Yps ~ Xs, family = binomial(link = "logit"))));
+  betas_t[1,] = psi;
+
+  # Standard error estimation
   if(var.comp == "asymptotic")
   {
-   vars_t[1,1] = var((H1-H0)/HX*(Y - QX) + Q1 - Q0 - betas_t[1,1])/n;
-   vars_t[1,2] = var((D1 - Q1_1)/Q0_1 - (D0 - Q0_1)*Q1_1/Q0_1**2)/n;
-  } else #var == "bootstrap"
+   M = matrix(, nrow = 2, ncol = 2);
+   m_1m = plogis(cbind(1, Xs)%*%psi)*(1 - plogis(cbind(1, Xs)%*%psi));
+   M[1,1] = - mean(m_1m*1*1);
+   M[1,2] = - mean(m_1m*1*Xs);
+   M[2,1] = - mean(m_1m*Xs*1);
+   M[2,2] = - mean(m_1m*Xs*Xs);
+   EIC0 = matrix(0, nrow = 2, ncol = n);
+   Ys2 = matrix(Ys, nrow = n, ncol = nsampX);
+   Yps2 = matrix(Yps, nrow = n, ncol = nsampX);
+   Xs2 = matrix(Xs, nrow = n, ncol = nsampX);
+   EIC0[1,] = hX/pX*(Y - Yp2)*1 + rowMeans((Ys2 - Yps2)*1); 
+   EIC0[2,] = hX/pX*(Y - Yp2)*X + rowMeans((Ys2 - Yps2)*Xs2); 
+   EIC = solve(M)%*%EIC0;
+   vars_t[1,] = diag(var(t(EIC))/n);  } else #var == "bootstrap"
   {
    bootf = function(ds, i)
    {
@@ -411,28 +435,32 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
      model_Y0 = glm(Y~X + U[ , alpha_Y == 1], family = family.Y);
      model_X0 = glm(X~1 + U[ , alpha_Y == 1], family = family.X);
     }
-    predX0 = predict(model_X0);
-    sdX = sqrt(var(model_X0$residuals)*n/model_X0$df.residual);
-    delta0 = X0 - X;
-    delta1 = X1 - X;
-    H0 = dnorm(X-delta0, mean = predX0, sd = sdX);
-    H1 = dnorm(X-delta1, mean = predX0, sd = sdX);
-    HX = dnorm(X, mean = predX0, sd = sdX);
 
-    Q1 = plogis(cbind(1, X1, U[,alpha_Y == 1])%*%coef(model_Y0));
-    Q0 = plogis(cbind(1, X0, U[,alpha_Y == 1])%*%coef(model_Y0));
-    QX = plogis(cbind(1, X, U[,alpha_Y == 1])%*%coef(model_Y0));
+    ## Q-model estimation
+    modX = glm(X ~ 1, family = "gaussian");
+    Xs = as.matrix(rnorm(nsampX*n, mean = coef(modX, type = "res"), sd = sd(residuals(modX))));
+    Vs = matrix(rep(U[,alpha_Y == 1], each = nsampX), nrow = n*nsampX, ncol = sum(alpha_Y), byrow = FALSE);
+    Ys = plogis(cbind(1, Xs, Vs)%*%coef(model_Y0));
 
-    # Risk difference
-    B1 = mean((H1-H0)/HX*(Y - QX) + Q1 - Q0);
+    ## Clever covariate
+    hX = dnorm(X, mean = coef(modX), sd = sd(residuals(modX)));
+    pX = dnorm(X, mean = predict(model_X0), sd = sd(residuals(model_X0)));
+    Yp  = predict(model_Y0, type = "res");
+    w = hX/pX;
+    w = w/mean(w);
+    w = pmin(w, quantile(w, truncation[2]));
+    w = pmax(w, quantile(w, truncation[1]));
 
-    # Relative risk
-    D1 = H1/HX*(Y - QX) + Q1;
-    D0 = H0/HX*(Y - QX) + Q0;
-    Q1_1 = mean(D1);
-    Q0_1 = mean(D0);
-    B2 = Q1_1/Q0_1;
+    ## Fluctuation
+    mod.f = glm(Y ~ offset(qlogis(Yp)) + X, family = binomial(link = "logit"), weights = w);
+    Yps = plogis(coef(mod.f)[1] + coef(mod.f)[2]*Xs + qlogis(Ys));
+    Yp2 = plogis(coef(mod.f)[1] + coef(mod.f)[2]*X + qlogis(Yp));
 
+
+    ## Final estimation
+    psi = suppressWarnings(coef(glm(Yps ~ Xs, family = binomial(link = "logit"))));
+    B1 = psi[1];
+    B2 = psi[2];
     return(c(B1, B2));
    }
    boot.samples = boot(data = cbind(Y, X, U), statistic = bootf, R = B)$t;
@@ -687,32 +715,46 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
     }
    } else if(family.Y == "binomial" & family.X == "gaussian")
    {
-    predX0 = predict(model_X0);
-    #Truncation...
-    sdX = sqrt(var(model_X0$residuals)*n/model_X0$df.residual);
-    H0 = dnorm(X-delta0, mean = predX0, sd = sdX);
-    H1 = dnorm(X-delta1, mean = predX0, sd = sdX);
-    HX = dnorm(X, mean = predX0, sd = sdX);
+    ## Q-model estimation
+    modX = glm(X ~ 1, family = "gaussian");
+    Xs = as.matrix(rnorm(nsampX*n, mean = coef(modX, type = "res"), sd = sd(residuals(modX))));
+    Vs = matrix(rep(U[,alpha_Y_1 == 1], each = nsampX), nrow = n*nsampX, ncol = sum(alpha_Y_1), byrow = FALSE);
+    Ys = plogis(cbind(1, Xs, Vs)%*%coef(model_Y1));
 
-    Q1 = plogis(cbind(1, X1, U[,alpha_Y_1 == 1])%*%coef(model_Y1));
-    Q0 = plogis(cbind(1, X0, U[,alpha_Y_1 == 1])%*%coef(model_Y1));
-    QX = plogis(cbind(1, X, U[,alpha_Y_1 == 1])%*%coef(model_Y1));
+    ## Clever covariate
+    hX = dnorm(X, mean = coef(modX), sd = sd(residuals(modX)));
+    pX = dnorm(X, mean = predict(model_X0), sd = sd(residuals(model_X0)));
+    Yp  = predict(model_Y1, type = "res");
+    w = hX/pX;
+    w = w/mean(w);
+    w = pmin(w, quantile(w, truncation[2]));
+    w = pmax(w, quantile(w, truncation[1]));
 
-    # A-IPTW
-    # Risk difference
-    betas_t[i,1] = mean((H1-H0)/HX*(Y - QX) + Q1 - Q0);
+    ## Fluctuation
+    mod.f = glm(Y ~ offset(qlogis(Yp)) + X, family = binomial(link = "logit"), weights = w);
+    Yps = plogis(coef(mod.f)[1] + coef(mod.f)[2]*Xs + qlogis(Ys));
+    Yp2 = plogis(coef(mod.f)[1] + coef(mod.f)[2]*X + qlogis(Yp));
 
-    # Relative risk
-    D1 = H1/HX*(Y - QX) + Q1;
-    D0 = H0/HX*(Y - QX) + Q0;
-    Q1_1 = mean(D1);
-    Q0_1 = mean(D0);
-    betas_t[i,2] = Q1_1/Q0_1;
+    ## Final estimation
+    psi = betas_t[i,] = suppressWarnings(coef(glm(Yps ~ Xs, family = binomial(link = "logit"))));
 
+    # Standard error estimation
     if(var.comp == "asymptotic")
     {
-     vars_t[i,1] = var((H1-H0)/HX*(Y - QX) + Q1 - Q0 - betas_t[i,1])/n;
-     vars_t[i,2] = var((D1 - Q1_1)/Q0_1 - (D0 - Q0_1)*Q1_1/Q0_1**2)/n;
+     M = matrix(, nrow = 2, ncol = 2);
+     m_1m = plogis(cbind(1, Xs)%*%psi)*(1 - plogis(cbind(1, Xs)%*%psi));
+     M[1,1] = - mean(m_1m*1*1);
+     M[1,2] = - mean(m_1m*1*Xs);
+     M[2,1] = - mean(m_1m*Xs*1);
+     M[2,2] = - mean(m_1m*Xs*Xs);
+     EIC0 = matrix(0, nrow = 2, ncol = n);
+     Ys2 = matrix(Ys, nrow = n, ncol = nsampX);
+     Yps2 = matrix(Yps, nrow = n, ncol = nsampX);
+     Xs2 = matrix(Xs, nrow = n, ncol = nsampX);
+     EIC0[1,] = hX/pX*(Y - Yp2)*1 + rowMeans((Ys2 - Yps2)*1); 
+     EIC0[2,] = hX/pX*(Y - Yp2)*X + rowMeans((Ys2 - Yps2)*Xs2); 
+     EIC = solve(M)%*%EIC0;
+     vars_t[i,] = diag(var(t(EIC))/n);
     } else #var == "bootstrap"
     {
      bootf = function(ds, i)
@@ -729,34 +771,38 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
        model_Y1 = glm(Y~X + U[ , alpha_Y_1 == 1], family = family.Y);
        model_X0 = glm(X~1 + U[ , alpha_Y_1 == 1], family = family.X);
       }
-      predX0 = predict(model_X0);
-      #Truncation...
-      sdX = sqrt(var(model_X0$residuals)*n/model_X0$df.residual);
-      H0 = dnorm(X-delta0, mean = predX0, sd = sdX);
-      H1 = dnorm(X-delta1, mean = predX0, sd = sdX);
-      HX = dnorm(X, mean = predX0, sd = sdX);
 
-      Q1 = plogis(cbind(1, X1, U[,alpha_Y_1 == 1])%*%coef(model_Y1));
-      Q0 = plogis(cbind(1, X0, U[,alpha_Y_1 == 1])%*%coef(model_Y1));
-      QX = plogis(cbind(1, X, U[,alpha_Y_1 == 1])%*%coef(model_Y1));
+      ## Q-model estimation
+      modX = glm(X ~ 1, family = "gaussian");
+      Xs = as.matrix(rnorm(nsampX*n, mean = coef(modX, type = "res"), sd = sd(residuals(modX))));
+      Vs = matrix(rep(U[,alpha_Y_1 == 1], each = nsampX), nrow = n*nsampX, ncol = sum(alpha_Y_1), byrow = FALSE);
+      Ys = plogis(cbind(1, Xs, Vs)%*%coef(model_Y1));
 
-      # A-IPTW
-      # Risk difference
-      B1 = mean((H1-H0)/HX*(Y - QX) + Q1 - Q0);
+      ## Clever covariate
+      hX = dnorm(X, mean = coef(modX), sd = sd(residuals(modX)));
+      pX = dnorm(X, mean = predict(model_X0), sd = sd(residuals(model_X0)));
+      Yp  = predict(model_Y1, type = "res");
+      w = hX/pX;
+      w = w/mean(w);
+      w = pmin(w, quantile(w, truncation[2]));
+      w = pmax(w, quantile(w, truncation[1]));
 
-      # Relative risk
-      D1 = H1/HX*(Y - QX) + Q1;
-      D0 = H0/HX*(Y - QX) + Q0;
-      Q1_1 = mean(D1);
-      Q0_1 = mean(D0);
-      B2 = Q1_1/Q0_1;
+      ## Fluctuation
+      mod.f = glm(Y ~ offset(qlogis(Yp)) + X, family = binomial(link = "logit"), weights = w);
+      Yps = plogis(coef(mod.f)[1] + coef(mod.f)[2]*Xs + qlogis(Ys));
+      Yp2 = plogis(coef(mod.f)[1] + coef(mod.f)[2]*X + qlogis(Yp));
+
+      ## Final estimation
+      psi = betas_t[i,] = suppressWarnings(coef(glm(Yps ~ Xs, family = binomial(link = "logit"))));
+      B1 = psi[1];
+      B2 = psi[2];
       return(c(B1, B2));
      }
      boot.samples = boot(data = cbind(Y, X, U), statistic = bootf, R = B)$t;
      vars_t[i,1] = var(boot.samples[,1], na.rm = TRUE);
      vars_t[i,2] = var(boot.samples[,2], na.rm = TRUE);
     }
-   }	
+   }
    models_Y[i,] = alpha_Y_1;
    change_Y = alpha_Y_1 - alpha_Y_0;
    px = alpha_X[change_Y != 0];

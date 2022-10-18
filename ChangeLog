@@ -1,5 +1,9 @@
+2022/10/07:
+- The way GBCEE estimates the causal effect with a binary outcome and a continuous outcome has been corrected. 
+
+
 2020/03/10:
- - A new function, GABCEE has been added.
+ - A new function, GBCEE has been added.
  - Bug fix in ABCEE: When computing the prior distribution, the regression coefficients were not appropriately scaled.
                      This bug did return an error, but results were wrong.
  - Bug fix in ABCEE and NBCEE: The size of the objects containing the results was sometimes incorrect.

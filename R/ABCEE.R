@@ -15,10 +15,8 @@ ABCEE <- function (X, Y, U, omega, forX = NA, niter = 5000, nburn = 500,
         models.X = cbind(model.X$which, model.X$postprob)
         alpha_X = model.X$probne0/100
     }
-    else if ((class(family.X) == "character" && family.X == 
-        "gaussian") | (class(family.X) == "family" & 
-        family.X$family == "gaussian" & family.X$link == 
-        "identity")) {
+    else if ((is(family.X, "character") && family.X == "gaussian") |
+             (is(family.X, "family") & family.X$family == "gaussian" & family.X$link == "identity")) {
         resultsX = summary(regsubsets(y = X, x = U, nbest = 150, 
             really.big = T, nvmax = n_cov))
         MLx = exp(-resultsX$bic/2 + min(resultsX$bic)/2)

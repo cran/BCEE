@@ -9,7 +9,7 @@ A Bayesian model averaging approach to causal effect estimation
 based on the BCEE algorithm. Currently supports binary or continuous
 exposures and outcomes. For more details, see: 
 Talbot et al. (2015) DOI:10.1515/jci-2014-0035,
-Talbot and Beaudoin (2020) arXiv:2003.11588.  
+Talbot and Beaudoin (2022).  
 }
 \details{
 \tabular{ll}{
@@ -30,7 +30,7 @@ Maintainer: Denis Talbot \email{denis.talbot@fmed.ulaval.ca}
 }
 \references{
 Talbot, D., Lefebvre, G., Atherton, J. (2015) \emph{The Bayesian causal effect estimation algorithm}, Journal of Causal Inference, 3(2), 207-236.\\
-Talbot, D., Beaudoin, C (2020) \emph{A generalized double robust Bayesian model averaging approach to causal effect estimation with application to the Study of Osteoporotic Fractures} arXiv:2003.11588 
+Talbot, D., Beaudoin, C (2022) \emph{A generalized double robust Bayesian model averaging approach to causal effect estimation with application to the Study of Osteoporotic Fractures}, Journal of Causal Inference (forthcoming).
 }
 \keyword{causal}
 \keyword{confounding}

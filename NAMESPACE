@@ -6,4 +6,6 @@ importFrom(leaps, regsubsets)
 importFrom("stats", "dnorm", "na.omit", "plogis", "predict", "qlogis",
              "quantile", "var")
 importFrom(boot, boot)
+importFrom("stats", "binomial", "residuals")
+importFrom("methods", "is")
 exportPattern("ABCEE", "NBCEE", "GBCEE")

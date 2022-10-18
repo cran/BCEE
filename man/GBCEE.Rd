@@ -9,7 +9,7 @@ A generalized double robust Bayesian model averaging approach to causal effect e
 \usage{
 GBCEE(X, Y, U, omega, niter = 5000, family.X = "gaussian",
  family.Y = "gaussian", X1 = 1, X0 = 0, priorX = NA, priorY = NA, maxsize = NA,
- OR = 20, truncation = c(0.01, 0.99), var.comp = "asymptotic", B = 200)
+ OR = 20, truncation = c(0.01, 0.99), var.comp = "asymptotic", B = 200, nsampX = 30)
 }
 \arguments{
   \item{X}{A vector of observed values for the exposure.
@@ -44,6 +44,8 @@ GBCEE(X, Y, U, omega, niter = 5000, family.X = "gaussian",
 }
 \item{B}{The number of bootstrap samples when estimating the variance using the nonparametric bootstrap. The default is 200. 
 }
+\item{nsampX}{The number of samples to take from the exposure distribution for the Monte Carlo integration when X is continuous and Y is binary. The default is 30. 
+}
 }
 
 \details{When both \code{Y} and \code{X} are continuous, \code{GBCEE} estimates \eqn{\Delta = E[Y^{x+1}] - E[Y^x]}, assuming a linear effect of \code{X} on \code{Y}. When \code{Y} is continuous and \code{X} is binary, \code{GBCEE} estimates \eqn{\Delta = E[Y^{X1}] - E[Y^{X0}]}. When \code{Y} is binary, \code{GBCEE} estimates both \eqn{\Delta = E[Y^{X1}] - E[Y^{X0}]} and \eqn{\Delta = E[Y^{X1}]/E[Y^{X0}]}, regardless of if \code{X} is continuous or binary. 
@@ -65,7 +67,7 @@ Madigan, D., York, J., Allard, D. (1995) \emph{Bayesian graphical models for dis
 
 Madigan, D., Raftery, A. E. (1994) \emph{Model selection and accounting for model uncertainty in graphical models using Occam's window}, Journal of the American Statistical Association, 89 (428), 1535-1546.
 
-Talbot, D., Beaudoin, C (2020) \emph{A generalized double robust Bayesian model averaging approach to causal effect estimation with application to the Study of Osteoporotic Fractures} arXiv:2003.11588 
+Talbot, D., Beaudoin, C (2022) \emph{A generalized double robust Bayesian model averaging approach to causal effect estimation with application to the Study of Osteoporotic Fractures} Journal of Causal Inference (Forthcoming).
 }
 \author{
 Denis Talbot
