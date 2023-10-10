@@ -38,7 +38,7 @@ GBCEE(X, Y, U, omega, niter = 5000, family.X = "gaussian",
 }
 \item{OR}{A number specifying the maximum ratio for excluding models in Occam's window for the outcome modeling step. All outcome models whose posterior probability is more than \code{OR} times smaller than the largest posterior probability are excluded from the model averaging. The posterior mass of discarded models is redistributed on the remaining models. See Madigan & Raftery, 1994. The default is 20. 
 }
-\item{truncation}{A vector of length 2 indicating the smallest and largest values for the estimated propensity score (\eqn{P(X = 1|U)}). Values outside those bounds are truncated to the bounds. Some truncation can help reduce the impact of near positivity violations. The default is \code{c(0.01, 0.99)}. Currently, this argument is only used when \code{family.X = "binomial"}. 
+\item{truncation}{A vector of length 2 indicating the smallest and largest values for the estimated propensity score (\eqn{P(X = 1|U)}). Values outside those bounds are truncated to the bounds. Some truncation can help reduce the impact of near positivity violations. The default is \code{c(0.01, 0.99)}. Currently, no truncation is performed when \code{family.X = "gaussian"} and \code{family.Y = "gaussian"}. 
 }
 \item{var.comp}{The method for computing the variance of the targeted maximum likelihood estimators in the BCEE algorithm. The possible values are \code{"asymptotic"}, for the efficient influence function based estimator, and \code{"boostrap"} for the nonparametric bootstrap estimator. The default is \code{"asymptotic"}.
 }
@@ -48,15 +48,15 @@ GBCEE(X, Y, U, omega, niter = 5000, family.X = "gaussian",
 }
 }
 
-\details{When both \code{Y} and \code{X} are continuous, \code{GBCEE} estimates \eqn{\Delta = E[Y^{x+1}] - E[Y^x]}, assuming a linear effect of \code{X} on \code{Y}. When \code{Y} is continuous and \code{X} is binary, \code{GBCEE} estimates \eqn{\Delta = E[Y^{X1}] - E[Y^{X0}]}. When \code{Y} is binary, \code{GBCEE} estimates both \eqn{\Delta = E[Y^{X1}] - E[Y^{X0}]} and \eqn{\Delta = E[Y^{X1}]/E[Y^{X0}]}, regardless of if \code{X} is continuous or binary. 
+\details{When both \code{Y} and \code{X} are continuous, \code{GBCEE} estimates \eqn{\Delta = E[Y^{x+1}] - E[Y^x]}, assuming a linear effect of \code{X} on \code{Y}. When \code{Y} is continuous and \code{X} is binary, \code{GBCEE} estimates \eqn{\Delta = E[Y^{X1}] - E[Y^{X0}]}. When \code{Y} and \code{X} are binary, \code{GBCEE} estimates both \eqn{\Delta = E[Y^{X1}] - E[Y^{X0}]} and \eqn{\Delta = E[Y^{X1}]/E[Y^{X0}]}. When \code{Y} is binary and \code{X} is continuous, \code{GBCEE} estimates the slope of the logistic marginal structural working model \eqn{logit(E[Y^{x}]) = \beta_0 + \beta_1 x}  
 
-The \code{GBCEE} function first computes the exposure model's posterior distribution using a Markov chain Monte Carlo model composition (MC^3) algorithm (Madigan et al. 1995). The outcome model's posterior distribution is then computed using MC^3 (Madigan et al., 1995) as described in Section 3.4 of Talbot and Beaudoin (2020).
+The \code{GBCEE} function first computes the exposure model's posterior distribution using a Markov chain Monte Carlo model composition (MC^3) algorithm (Madigan et al. 1995). The outcome model's posterior distribution is then computed using MC^3 (Madigan et al., 1995) as described in Section 3.4 of Talbot and Beaudoin (2022).
 
 \code{GBCEE} assumes there are no missing values in the objects \code{X}, \code{Y} and \code{U}. The \code{na.omit} function which removes cases with missing data or an imputation package might be helpful.
 }
 
 \value{
-\item{beta}{The model averaged estimate of the causal effect (\eqn{\hat{\Delta}}).} 
+\item{beta}{The model averaged estimate of the causal effect (\eqn{\hat{\Delta}}). When \code{Y} is \code{"gaussian"}, this is \eqn{\Delta = E[Y^{X1}] - E[Y^{X0}]}. When both \code{Y} and \code{X} are \code{"binomial"}, \code{Diff} is \eqn{\Delta = E[Y^{X1}] - E[Y^{X0}]} and \code{RR} is \eqn{\Delta = E[Y^{X1}]/E[Y^{X0}]}. When \code{Y} is \code{"binomial"} and \code{X} is \code{"gaussian"}, \code{b0} and \code{b1} are the coefficients of the working marginal structural model \eqn{logit(E[Y^{x}]) = \beta_0 + \beta_1 x}.} 
 \item{stderr}{The estimated standard error of the causal effect estimate.}
 \item{models.X}{A matrix giving the posterior distribution of the exposure model. Each row corresponds to an exposure model. Within each row, the first \code{M} elements are Booleans indicating the inclusion (1) or the exclusion (0) of each potential confounding factor. The last element gives the posterior probability of the exposure model.}
 \item{models.Y}{A matrix giving the posterior distribution of the outcome model after applying the Occam's window. Each row corresponds to an outcome model. Within each row, the first \code{M} elements are Booleans indicating the inclusion (1) or the exclusion (0) of each potential confounding factor. The next elements are the corresponding causal effect estimate(s) and standard error(s). The last element gives the posterior probability of the outcome model.}
@@ -67,7 +67,7 @@ Madigan, D., York, J., Allard, D. (1995) \emph{Bayesian graphical models for dis
 
 Madigan, D., Raftery, A. E. (1994) \emph{Model selection and accounting for model uncertainty in graphical models using Occam's window}, Journal of the American Statistical Association, 89 (428), 1535-1546.
 
-Talbot, D., Beaudoin, C (2022) \emph{A generalized double robust Bayesian model averaging approach to causal effect estimation with application to the Study of Osteoporotic Fractures} Journal of Causal Inference (Forthcoming).
+Talbot, D., Beaudoin, C (2022) \emph{A generalized double robust Bayesian model averaging approach to causal effect estimation with application to the Study of Osteoporotic Fractures}, Journal of Causal Inference, 10(1), 335-371.
 }
 \author{
 Denis Talbot

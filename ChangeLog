@@ -1,3 +1,9 @@
+2023/10/10:
+- Minor modifications to DESCRIPTION and documentation files to comply with new CRAN policies.
+- The documentation of GBCEE was updated.
+- The output of GBCEE with a binary outcome and a continuous outcome has been clarified.
+
+
 2022/10/07:
 - The way GBCEE estimates the causal effect with a binary outcome and a continuous outcome has been corrected. 
 

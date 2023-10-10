@@ -849,7 +849,7 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
   ord = order(models.Y[,n_cov+3], decreasing = TRUE);
   beta_t = colSums(betas_t*pY_tested3);
   stderr_t = sqrt(colSums((vars_t + betas_t**2)*pY_tested3) - beta_t**2); 
- } else #family.Y == "binomial"
+ } else if(family.Y == "binomial" & family.X == "binomial")
  {
   colnames(models.Y) = c(1:n_cov, "Diff", "RR", "SE.Diff", "SE.RR", "PostProb");
   ord = order(models.Y[,n_cov+5], decreasing = TRUE);
@@ -857,6 +857,14 @@ GBCEE <- function(X, Y, U, omega, niter = 5000, family.X = "gaussian", family.Y 
   stderr_t = sqrt(colSums((vars_t + betas_t**2)*pY_tested3) - beta_t**2); 
   names(beta_t) = c("Diff", "RR");
   names(stderr_t) = c("Diff", "RR");
+ } else if(family.Y == "binomial" & family.X == "gaussian")
+ {
+  colnames(models.Y) = c(1:n_cov, "b0", "b1", "SE.b0", "SE.b1", "PostProb");
+  ord = order(models.Y[,n_cov+5], decreasing = TRUE);
+  beta_t = colSums(betas_t*pY_tested3);
+  stderr_t = sqrt(colSums((vars_t + betas_t**2)*pY_tested3) - beta_t**2); 
+  names(beta_t) = c("b0", "b1");
+  names(stderr_t) = c("b0", "b1");
  }
  return(list(beta = beta_t, stderr = stderr_t, models.X = models.X, models.Y = models.Y[ord,]));
 }
